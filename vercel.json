@@ -1,0 +1,9 @@
+{
+  "builds": [
+    { "src": "index.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/manifest.json", "dest": "/index.js" },
+    { "src": "/stream.json", "dest": "/index.js" }
+  ]
+}
