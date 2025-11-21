@@ -1,4 +1,4 @@
-// index.js (Your main addon logic file)
+// index.js
 
 const { addonBuilder, getRouter } = require('stremio-addon-sdk');
 const path = require('path');
@@ -6,55 +6,39 @@ const fs = require('fs');
 const fetch = require('node-fetch');
 const { parseM3U } = require('@iptv/playlist');
 
-// --- Manifest Definition ---
+// --- 1. Manifest Definition ---
 const manifest = {
     id: 'org.ipvv.m3u.custom',
     version: '1.0.0',
     name: 'IPVV/M3U',
     description: 'Custom IPTV addon supporting personal M3U playlists via URL.',
-    
     resources: ['catalog', 'stream', 'config'], 
     types: ['tv'], 
-    
     catalogs: [{
         type: 'tv',
         id: 'user_m3u_channels',
         name: 'My IPTV Channels',
         extra: [{ name: 'config' }] 
     }],
-    
     idPrefixes: ['ipvv_'],
-    
-    config: [{
-        key: 'm3uUrl',
-        type: 'text',
-        title: 'Playlist URL',
-        required: true,
-        default: '',
-    }]
+    config: [{ key: 'm3uUrl', type: 'text', title: 'Playlist URL', required: true, default: '' }]
 };
 
 const builder = new addonBuilder(manifest);
 
-// --- 1. Configuration Handler (Serves config.html) ---
+// --- 2. Configuration Handler (Serves config.html) ---
 builder.defineConfigurationHandler(() => {
-    // Reads the static HTML file from the current directory
-    const htmlPath = path.join(__dirname, 'config.html');
-    
+    // Note: We use fs-extra to ensure file access works robustly in the Vercel environment
     try {
+        const htmlPath = path.join(__dirname, 'config.html');
         const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-        return Promise.resolve({
-            html: htmlContent
-        });
+        return Promise.resolve({ html: htmlContent });
     } catch (e) {
-        // Fallback error message if config.html is missing
-        return Promise.resolve({
-            html: '<h1>Error: config.html not found!</h1><p>Please ensure you have created the config.html file in your project root.</p>'
-        });
+        return Promise.resolve({ html: '<h1>Error: config.html not found!</h1>' });
     }
 });
 
-// --- 2. Catalog Handler (Fetches and Parses M3U) ---
+// --- 3. Catalog Handler (Fetches and Parses M3U) ---
 builder.defineCatalogHandler(async ({ config }) => {
     const m3uUrl = config.m3uUrl;
 
@@ -70,25 +54,15 @@ builder.defineCatalogHandler(async ({ config }) => {
 
     try {
         const response = await fetch(m3uUrl);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch M3U: ${response.statusText}`);
-        }
         const m3uContent = await response.text();
         const playlist = parseM3U(m3uContent);
         
-        const metas = playlist.items.map((channel, index) => {
-            const attributes = channel.attributes || {};
-            const logo = attributes['tvg-logo'] || null;
-            const title = channel.name || `Channel ${index + 1}`;
-
-            return {
-                id: `ipvv_${index}`,
-                type: 'tv',
-                name: title,
-                poster: logo || 'https://i.imgur.com/P1f8h3F.png',
-                background: attributes['group-title'] ? `Group: ${attributes['group-title']}` : null,
-            };
-        });
+        const metas = playlist.items.map((channel, index) => ({
+            id: `ipvv_${index}`,
+            type: 'tv',
+            name: channel.name || `Channel ${index + 1}`,
+            poster: channel.attributes['tvg-logo'] || 'https://i.imgur.com/P1f8h3F.png', 
+        }));
 
         return { metas };
 
@@ -99,19 +73,17 @@ builder.defineCatalogHandler(async ({ config }) => {
             type: 'tv',
             name: 'Error Loading Playlist',
             poster: 'https://i.imgur.com/KqW8o3J.gif',
-            description: `Could not load or parse playlist from ${m3uUrl}. Error: ${error.message}`,
+            description: `Could not load or parse playlist. Error: ${error.message}`,
         }]};
     }
 });
 
-// --- 3. Stream Handler (Provides the Playable Link) ---
+// --- 4. Stream Handler (Provides the Playable Link) ---
 builder.defineStreamHandler(async ({ id, type, config }) => {
     const m3uUrl = config.m3uUrl;
     const channelIndex = parseInt(id.replace('ipvv_', ''));
 
-    if (!m3uUrl || isNaN(channelIndex)) {
-        return { streams: [] };
-    }
+    if (!m3uUrl || isNaN(channelIndex)) { return { streams: [] }; }
 
     try {
         // Re-fetch and re-parse the M3U to find the stream URL
@@ -134,21 +106,20 @@ builder.defineStreamHandler(async ({ id, type, config }) => {
     } catch (error) {
         console.error("Stream Fetch Error:", error);
     }
-
     return { streams: [] };
 });
 
-// --- VERCEL EXPORT (The crucial part for Vercel deployment) ---
-// This handles the serverless routing.
+
+// --- 5. VERCEL EXPORT (The crucial part for Vercel deployment) ---
 
 const addonInterface = builder.getAddon();
 const router = getRouter(addonInterface);
 
-// This exports a Vercel-compatible function handler that handles all HTTP requests
+// This function handles all HTTP requests for the Vercel serverless environment
 module.exports = (req, res) => {
-    // The router handles the Stremio requests (manifest, catalog, stream, config)
+    // We hand off the request and response objects to the Stremio Addon Router
     router(req, res, () => {
-        // Fallback for requests that don't match an addon route
+        // Fallback for unhandled routes
         res.statusCode = 404;
         res.end('Not Found');
     });
