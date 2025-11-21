@@ -4,6 +4,7 @@
   ],
   "routes": [
     { "src": "/manifest.json", "dest": "/index.js" },
-    { "src": "/stream.json", "dest": "/index.js" }
+    { "src": "/catalog/tv/iptv.json", "dest": "/index.js" },
+    { "src": "/stream/(.*).json", "dest": "/index.js" }
   ]
 }
