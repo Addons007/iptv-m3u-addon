@@ -1,0 +1,7 @@
+{
+  "name": "iptv-m3u-addon",
+  "version": "1.0.0",
+  "dependencies": {
+    "stremio-addon-sdk": "1.6.10"
+  }
+}
