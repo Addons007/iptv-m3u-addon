@@ -26,4 +26,21 @@ builder.defineStreamHandler(({ id }) => {
   });
 });
 
-module.exports = builder.getInterface();
+const addonInterface = builder.getInterface();
+
+module.exports = async (req, res) => {
+  const pathname = req.url.split("?")[0];
+
+  if (pathname === "/manifest.json") {
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify(addonInterface.manifest));
+  } else if (pathname === "/stream.json") {
+    const { id } = req.query;
+    const result = await addonInterface.get("stream", { id });
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify(result));
+  } else {
+    res.statusCode = 404;
+    res.end("Not Found");
+  }
+};
