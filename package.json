@@ -1,15 +1,23 @@
 {
   "name": "ipvv-m3u-addon",
   "version": "1.0.0",
-  "description": "Custom IPTV addon for Stremio",
+  "description": "Custom IPTV addon supporting personal M3U playlists via URL, deployed on Vercel.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
+  "keywords": [
+    "stremio",
+    "addon",
+    "iptv",
+    "m3u",
+    "vercel"
+  ],
   "dependencies": {
     "@iptv/playlist": "^1.0.0",
     "stremio-addon-sdk": "^1.2.x",
-    "node-fetch": "^2.6.x",
-    "fs-extra": "^11.2.0" 
-  }
+    "node-fetch": "^2.6.7",
+    "fs-extra": "^11.2.0"
+  },
+  "license": "ISC"
 }
