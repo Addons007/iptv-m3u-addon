@@ -2,7 +2,7 @@
 
 const { addonBuilder, getRouter } = require('stremio-addon-sdk');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra'); 
 const fetch = require('node-fetch');
 const { parseM3U } = require('@iptv/playlist');
 
