@@ -26,8 +26,4 @@ builder.defineStreamHandler(({ id }) => {
   });
 });
 
-export default function handler(req, res) {
-  const interface = builder.getInterface();
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(interface));
-}
+module.exports = builder.getInterface();
