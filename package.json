@@ -9,6 +9,7 @@
   "dependencies": {
     "@iptv/playlist": "^1.0.0",
     "stremio-addon-sdk": "^1.2.x",
-    "node-fetch": "^2.6.x" 
+    "node-fetch": "^2.6.x",
+    "fs-extra": "^11.2.0" 
   }
 }
