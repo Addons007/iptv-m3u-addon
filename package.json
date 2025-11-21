@@ -1,7 +1,14 @@
 {
-  "name": "iptv-m3u-addon",
+  "name": "ipvv-m3u-addon",
   "version": "1.0.0",
+  "description": "Custom IPTV addon for Stremio",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
-    "stremio-addon-sdk": "1.6.10"
+    "@iptv/playlist": "^1.0.0",
+    "stremio-addon-sdk": "^1.2.x",
+    "node-fetch": "^2.6.x" 
   }
 }
