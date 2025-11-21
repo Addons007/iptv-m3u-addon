@@ -1,63 +1,27 @@
-const { addonBuilder } = require("stremio-addon-sdk");
+// addon.js (Manifest changes)
 
 const manifest = {
-  id: "org.addons007.iptv",
-  version: "1.0.0",
-  name: "IPTV M3U Addon",
-  description: "Stream addon for custom IPTV M3U playlists",
-  types: ["tv"],
-  resources: ["catalog", "stream"],
-  catalogs: [
-    { type: "tv", id: "iptv", name: "IPTV Channels" }
-  ],
-  behaviorHints: { configurationRequired: false }
+    id: 'org.ipvv.m3u',
+    version: '1.0.0',
+    name: 'IPVV/M3U',
+    description: 'Custom IPTV addon supporting personal M3U or TXT playlists via file upload or URL',
+    
+    // Add the 'config' resource
+    resources: ['catalog', 'stream', 'config'], 
+    
+    types: ['tv'], // Use 'tv' for live channels
+    
+    // Define the catalog that will show the channels from the M3U
+    catalogs: [{
+        type: 'tv',
+        id: 'user_m3u_channels',
+        name: 'My IPTV Channels'
+    }],
+    
+    // Add a user defined property to store the M3U content/URL
+    // This is NOT used for the simple config page, but good practice.
+    // The actual configuration is handled by the config UI.
+    // 'idPrefixes' is optional.
 };
 
-const builder = new addonBuilder(manifest);
-
-builder.defineCatalogHandler(() => ({
-  metas: [
-    { id: "channel1", type: "tv", name: "Sample Channel 1" },
-    { id: "channel2", type: "tv", name: "Sample Channel 2" }
-  ]
-}));
-
-builder.defineStreamHandler(({ id }) => {
-  if (id === "channel1") {
-    return Promise.resolve({
-      streams: [{ title: "Channel 1 Stream", url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" }]
-    });
-  }
-  if (id === "channel2") {
-    return Promise.resolve({
-      streams: [{ title: "Channel 2 Stream", url: "https://test-streams.mux.dev/test_001/stream.m3u8" }]
-    });
-  }
-  return Promise.resolve({ streams: [] });
-});
-
-const addonInterface = builder.getInterface();
-
-module.exports = async (req, res) => {
-  const pathname = req.url.split("?")[0];
-
-  if (pathname === "/manifest.json") {
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(addonInterface.manifest));
-  } else if (pathname === "/catalog/tv/iptv.json") {
-    const result = await addonInterface.get("catalog", { type: "tv", id: "iptv" });
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(result));
-  } else if (pathname === "/stream/channel1.json") {
-    const result = await addonInterface.get("stream", { id: "channel1" });
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(result));
-  } else if (pathname === "/stream/channel2.json") {
-    const result = await addonInterface.get("stream", { id: "channel2" });
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(result));
-  } else {
-    res.statusCode = 404;
-    res.end("Not Found");
-  }
-};
+// ... rest of the builder code
