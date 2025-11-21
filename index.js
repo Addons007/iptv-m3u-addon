@@ -1,39 +1,59 @@
-// index.js
+// api/index.js
 
 const { addonBuilder, getRouter } = require('stremio-addon-sdk');
-const path = require('path');
-const fs = require('fs-extra'); 
 const fetch = require('node-fetch');
-const { parseM3U } = require('@iptv/playlist');
 
-// --- 1. Manifest Definition ---
+// --- 1. ADDON METADATA ---
 const manifest = {
-    id: 'org.ipvv.m3u.custom',
+    id: 'org.iptv.m3u',
     version: '1.0.0',
-    name: 'IPVV/M3U',
-    description: 'Custom IPTV addon supporting personal M3U playlists via URL.',
-    resources: ['catalog', 'stream', 'config'], 
-    types: ['tv'], 
-    catalogs: [{
-        type: 'tv',
-        id: 'user_m3u_channels',
-        name: 'My IPTV Channels',
-        extra: [{ name: 'config' }] 
-    }],
-    idPrefixes: ['ipvv_'],
-    config: [{ key: 'm3uUrl', type: 'text', title: 'Playlist URL', required: true, default: '' }]
+    name: 'IPTV M3U Addon',
+    description: 'Stream IPTV channels from an M3U playlist',
+    types: ['tv'],
+    catalogs: [],
+    resources: ['stream']
 };
 
+// --- 2. ADDON BUILDER ---
 const builder = new addonBuilder(manifest);
 
-// --- 2. Configuration Handler (Serves config.html) ---
-builder.defineConfigurationHandler(() => {
-    // Note: We use fs-extra to ensure file access works robustly in the Vercel environment
+// --- 3. STREAM HANDLER ---
+builder.defineStreamHandler(async ({ type, id }) => {
+    const m3uUrl = process.env.M3U_URL; // set in Vercel Environment Variables
+    const channelIndex = parseInt(id, 10);
+
     try {
-        const htmlPath = path.join(__dirname, 'config.html');
-        const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-        return Promise.resolve({ html: htmlContent });
-    } catch (e) {
+        const response = await fetch(m3uUrl);
+        const m3uContent = await response.text();
+        const playlist = parseM3U(m3uContent); // implement or import this function
+
+        const channel = playlist.items[channelIndex];
+        if (channel && channel.url) {
+            return {
+                streams: [{
+                    url: channel.url,
+                    title: channel.name || 'Live Stream',
+                    name: channel.name || 'Live Stream'
+                }]
+            };
+        }
+    } catch (error) {
+        console.error("Stream Fetch Error:", error);
+    }
+
+    return { streams: [] };
+});
+
+// --- 4. ROUTER EXPORT FOR VERCEL ---
+const addonInterface = builder.getInterface();
+const router = getRouter(addonInterface);
+
+module.exports = (req, res) => {
+    router(req, res, () => {
+        res.statusCode = 404;
+        res.end('Not Found');
+    });
+};
         return Promise.resolve({ html: '<h1>Error: config.html not found!</h1>' });
     }
 });
